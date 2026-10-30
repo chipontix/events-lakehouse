@@ -72,7 +72,7 @@ the VM's 9.7–13.7 after them (4 vCPU). Container limits: Kafka 1 GiB
 `synchronous_commit=on`), app 2 GiB. Kafka 3.9.1 single broker in KRaft mode,
 6 partitions, producer with idempotence (acks=all) and lz4; Postgres 17.
 
-**Reading it.** One worker is steady at 42–46k msg/s. Three workers came out
+**Reading it.** One worker is steady at 42–45.6k msg/s. Three workers came out
 6–49% above the best single-worker run, with a wide spread: they share 4 vCPU with Kafka, Postgres and
 the other projects, so the extra processes mostly compete for the same cores.
 In a profile of one worker over 100k messages
@@ -175,7 +175,7 @@ original version is kept in `schema_version`.
   renames (aliases), type widening and defaults for free; the framing matches
   the Confluent serializers, so a real Schema Registry can replace the
   `schemas/` directory without changing the messages. Not running one saves a
-  JVM in a 6 GiB VM.
+  JVM in a 6 GiB VM (5.8 GiB visible).
 - **The reference reads labels, not data.** It never parses what the
   pipeline parses, so a decoder or contract bug cannot cancel itself out in
   the comparison.
