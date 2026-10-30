@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: lake
+    description: Parquet files written by the ingest, one per batch, partitioned by ingest date.
+    meta:
+      external_location: "read_parquet('{{ env_var('LAKE_DIR', '../data/lake') }}/events/*/*.parquet', hive_partitioning = false)"
+    tables:
+      - name: events
+        loaded_at_field: ingested_at
+        freshness:
+          warn_after: {count: 1, period: hour}
+          error_after: {count: 24, period: hour}

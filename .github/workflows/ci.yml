@@ -1,0 +1,24 @@
+name: ci
+on:
+  push: {branches: [main]}
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Unit, schema compatibility, contract and dbt-check tests (no brokers)
+        run: uv run pytest -q -m "not integration"
+
+  end-to-end:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every test in the app container against Kafka and Postgres
+        run: make test
+      - if: failure()
+        run: docker compose logs --no-color --tail 200
+      - if: always()
+        run: make down

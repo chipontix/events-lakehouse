@@ -1,0 +1,9 @@
+lakehouse:
+  target: duckdb
+  outputs:
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('WAREHOUSE', '../data/warehouse.duckdb') }}"
+      threads: 4
+      settings:
+        TimeZone: UTC  # event_date = UTC calendar day, whatever the machine's zone

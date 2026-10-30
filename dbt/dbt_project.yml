@@ -1,0 +1,10 @@
+name: lakehouse
+version: "1.0"
+profile: lakehouse
+model-paths: [models]
+macro-paths: [macros]
+test-paths: [tests]
+
+models:
+  lakehouse:
+    +materialized: table

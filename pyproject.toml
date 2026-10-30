@@ -1,0 +1,31 @@
+[project]
+name = "lakehouse"
+version = "0.1.0"
+description = "Kafka -> Postgres + Parquet event pipeline: dedup, versioned Avro schema, data-quality checks, dbt models"
+readme = "README.md"
+authors = [
+    { name = "chipontix", email = "rabiyaongar0@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "confluent-kafka>=2.16.1",
+    "dbt-core>=1.12.6",
+    "dbt-duckdb>=1.11.1",
+    "duckdb>=2.0.0",
+    "fastavro>=1.13.1",
+    "psycopg[binary]>=3.3.6",
+    "pyarrow>=26.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.26,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs Kafka and Postgres (run inside the app container: make test)"]

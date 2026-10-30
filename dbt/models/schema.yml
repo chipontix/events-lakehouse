@@ -1,0 +1,43 @@
+version: 2
+
+# Table-level checks. The ingest's row contract should make them all pass;
+# they are the second line for anything that reaches the lake another way
+# (a bug, a backfill, a hand-written file).
+models:
+  - name: stg_events
+    columns:
+      - name: event_id
+        data_tests: [not_null, unique]
+      - name: event_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [page_view, add_to_cart, purchase]}
+      - name: user_id
+        data_tests:
+          - not_null
+          - in_range: {arguments: {min: 1, max: 9223372036854775807}}
+      - name: occurred_at
+        data_tests:
+          - not_null
+          - in_range:
+              arguments: {min: "timestamptz '2020-01-01 00:00:00+00'", max: "ingested_at + interval 5 minute"}
+      - name: amount_cents
+        data_tests:
+          - in_range:
+              arguments: {min: 1, max: 10000000}
+              config: {where: "event_type = 'purchase'"}
+          - not_null:
+              config: {where: "event_type = 'purchase'"}
+      - name: currency
+        data_tests: [not_null]
+
+  - name: fct_events
+    columns:
+      - name: event_id
+        data_tests: [unique]
+
+  - name: agg_daily_events
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [event_date, event_type]}

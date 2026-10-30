@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "Event",
+  "namespace": "lakehouse",
+  "doc": "v1: what the legacy web tracker still sends. No currency, no session.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "user", "type": ["null", "long"]},
+    {"name": "ts", "type": "long", "doc": "epoch milliseconds, UTC"},
+    {"name": "amount_cents", "type": ["null", "int"]}
+  ]
+}

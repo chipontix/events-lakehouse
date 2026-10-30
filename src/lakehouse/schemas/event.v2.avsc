@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "Event",
+  "namespace": "lakehouse",
+  "doc": "v2: renames user -> user_id and ts -> occurred_at (aliases keep v1 readable), widens amount_cents to long, adds currency and session_id with defaults.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "user_id", "type": ["null", "long"], "aliases": ["user"]},
+    {"name": "occurred_at", "type": "long", "aliases": ["ts"], "doc": "epoch milliseconds, UTC"},
+    {"name": "amount_cents", "type": ["null", "long"]},
+    {"name": "currency", "type": "string", "default": "USD"},
+    {"name": "session_id", "type": ["null", "string"], "default": null}
+  ]
+}
