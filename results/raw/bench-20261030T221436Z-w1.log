@@ -1,0 +1,9 @@
+ Container lakehouse-postgres-1 Running 
+ Container lakehouse-kafka-1 Running 
+ Container lakehouse-kafka-1 Waiting 
+ Container lakehouse-postgres-1 Waiting 
+ Container lakehouse-postgres-1 Healthy 
+ Container lakehouse-kafka-1 Healthy 
+ Container lakehouse-app-run-5ce566b99269 Creating 
+ Container lakehouse-app-run-5ce566b99269 Created 
+{"n": 1000000, "workers": 1, "batch_size": 50000, "produce": {"messages": 1000000, "seconds": 11.907, "messages_per_s": 83985}, "ingest": {"messages": 1000000, "inserted": 944774, "duplicates": 50250, "quarantined": 4976, "seconds": 23.784, "process_wall_seconds": 24.915, "messages_per_s": 42045, "inserted_per_s": 39723, "per_worker": [{"messages": 1000000, "inserted": 944774, "duplicates": 50250, "quarantined": 4976, "batches": 20, "recovered_batches": 0, "seconds": 23.784, "first_message_at": 1793398493.3572447, "last_commit_at": 1793398517.1412928, "messages_per_s": 42045, "inserted_per_s": 39723}]}, "dbt_run_seconds": 10.494, "pipeline_seconds": 47.317, "dbt_test_seconds": 7.005, "dbt_test_summary": "PASS=13 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=13", "verify": {"ok": true, "problems": [], "seconds": 25.446}, "vm": {"nproc": 4, "loadavg_after": ["10.35", "9.96", "6.49"], "mem_total_kb": 6052188}}

@@ -1,0 +1,23 @@
+docker compose up -d --wait kafka postgres
+docker compose --profile app build app
+ Image lakehouse-app Building 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Image lakehouse-app Built 
+docker compose run --rm -T app python -m pytest -q
+......................................                                   [100%]
+38 passed in 70.93s (0:01:10)

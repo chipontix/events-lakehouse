@@ -1,0 +1,9 @@
+ Container lakehouse-postgres-1 Running 
+ Container lakehouse-kafka-1 Running 
+ Container lakehouse-kafka-1 Waiting 
+ Container lakehouse-postgres-1 Waiting 
+ Container lakehouse-kafka-1 Healthy 
+ Container lakehouse-postgres-1 Healthy 
+ Container lakehouse-app-run-a2395af981fe Creating 
+ Container lakehouse-app-run-a2395af981fe Created 
+{"n": 1000000, "workers": 3, "batch_size": 50000, "produce": {"messages": 1000000, "seconds": 11.468, "messages_per_s": 87202}, "ingest": {"messages": 1000000, "inserted": 944774, "duplicates": 50250, "quarantined": 4976, "seconds": 14.667, "process_wall_seconds": 16.019, "messages_per_s": 68179, "inserted_per_s": 64414, "per_worker": [{"messages": 330327, "inserted": 311937, "duplicates": 16706, "quarantined": 1684, "batches": 7, "recovered_batches": 0, "seconds": 13.464, "first_message_at": 1793398791.1379478, "last_commit_at": 1793398804.602062, "messages_per_s": 24534, "inserted_per_s": 23168}, {"messages": 334325, "inserted": 315938, "duplicates": 16746, "quarantined": 1641, "batches": 7, "recovered_batches": 0, "seconds": 14.612, "first_message_at": 1793398791.136806, "last_commit_at": 1793398805.7483137, "messages_per_s": 22881, "inserted_per_s": 21623}, {"messages": 335348, "inserted": 316899, "duplicates": 16798, "quarantined": 1651, "batches": 7, "recovered_batches": 0, "seconds": 14.253, "first_message_at": 1793398791.0811446, "last_commit_at": 1793398805.3342464, "messages_per_s": 23528, "inserted_per_s": 22234}]}, "dbt_run_seconds": 8.737, "pipeline_seconds": 36.226, "dbt_test_seconds": 3.217, "dbt_test_summary": "PASS=13 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=13", "verify": {"ok": true, "problems": [], "seconds": 17.04}, "vm": {"nproc": 4, "loadavg_after": ["9.72", "10.96", "7.88"], "mem_total_kb": 6052188}}

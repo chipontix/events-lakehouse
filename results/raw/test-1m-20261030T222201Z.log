@@ -1,0 +1,19 @@
+ Container lakehouse-postgres-1 Running 
+ Container lakehouse-kafka-1 Running 
+ Container lakehouse-kafka-1 Waiting 
+ Container lakehouse-postgres-1 Waiting 
+ Container lakehouse-kafka-1 Healthy 
+ Container lakehouse-postgres-1 Healthy 
+ Container lakehouse-app-run-d07986a44e8a Creating 
+ Container lakehouse-app-run-d07986a44e8a Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /opt/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /work
+configfile: pyproject.toml
+testpaths: tests
+collecting ... collected 38 items / 37 deselected / 1 selected
+
+tests/test_pipeline.py::test_two_phases_with_late_events_match_the_reference PASSED [100%]
+
+================= 1 passed, 37 deselected in 67.32s (0:01:07) ==================
