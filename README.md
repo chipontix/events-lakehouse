@@ -232,6 +232,12 @@ runs the broker-less ones on the runner and `make test` in Docker.
 - `dbt source freshness` checks the ingest time of the newest file, i.e. that
   the pipeline runs, not that producers are sending.
 
+## How it was built
+
+The code, tests, dbt models and this README were written by Claude Code, Anthropic's AI coding
+agent, working to Rabiya's problem statement and requirements. Every number above comes from the
+commands in [Numbers](#numbers) and can be re-run.
+
 ## Third-party software
 
 | | license | used for |
