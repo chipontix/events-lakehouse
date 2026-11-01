@@ -17,6 +17,7 @@ One loop, one transaction per batch:
 
 import datetime as dt
 import os
+import tempfile
 import time
 from importlib.resources import files
 from pathlib import Path
@@ -77,7 +78,9 @@ def write_parquet(lake: Path, batch_id: int, ingested_at: dt.datetime, rows: lis
     rel = f"events/ingest_date={ingested_at:%Y-%m-%d}/batch-{batch_id:08d}.parquet"
     path = lake / rel
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
+    # a unique tmp name: workers recovering the same batch at startup must not share one
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    os.close(fd)
     pq.write_table(table, tmp, compression="zstd")
     os.replace(tmp, path)
     return rel

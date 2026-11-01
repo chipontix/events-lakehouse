@@ -81,3 +81,16 @@ def test_freshness(tmp_path):
 
     write_parquet(tmp_path / "lake", 2, utcnow(), _clean_rows(500))
     assert dbt(tmp_path, env, "source", "freshness").returncode == 0
+
+
+def test_concurrent_writes_of_one_batch_do_not_collide(tmp_path):
+    """Two workers recovering the same batch after a crash write the same file at once."""
+    from concurrent.futures import ThreadPoolExecutor
+    import pyarrow.parquet as pq
+
+    rows, at = _clean_rows(500), utcnow()
+    with ThreadPoolExecutor(8) as pool:
+        rels = set(pool.map(lambda _: write_parquet(tmp_path / "lake", 1, at, rows), range(32)))
+    (rel,) = rels
+    assert pq.read_table(tmp_path / "lake" / rel).num_rows == len(rows)
+    assert not list((tmp_path / "lake").rglob("*.tmp"))
