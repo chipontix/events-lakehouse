@@ -1,4 +1,4 @@
-"""python -m lakehouse {produce,ingest,expected,verify}; prints one JSON line."""
+"""python -m lakehouse {produce,ingest,replay,expected,verify}; prints one JSON line."""
 
 import argparse
 import json
@@ -33,6 +33,8 @@ def main(argv=None) -> int:
     p.add_argument("--max-wait", type=float, default=1.0, help="seconds before a partial batch is flushed")
     p.add_argument("--stop-at-eof", action="store_true", help="exit once every partition is drained")
     p.add_argument("--partitions", type=lambda v: [int(x) for x in v.split(",")], help="e.g. 0,1,2 (default: all)")
+    p = sub.add_parser("replay", help="re-check quarantined records; load the ones that pass now")
+    p.add_argument("--reason", help="only records quarantined for this reason")
     a = ap.parse_args(argv)
 
     if a.cmd == "produce":
@@ -41,6 +43,11 @@ def main(argv=None) -> int:
     elif a.cmd == "ingest":
         out = ingest.run(ENV["bootstrap"], ENV["dsn"], ENV["lake"], ENV["topic"], a.batch_size, a.max_wait,
                          a.stop_at_eof, a.partitions)
+    elif a.cmd == "replay":
+        import psycopg
+        with psycopg.connect(ENV["dsn"]) as conn:
+            ingest.apply_schema(conn)
+            out = ingest.replay_quarantine(conn, ENV["lake"], a.reason)
     elif a.cmd == "expected":
         r = reference.expected(Spec(n=a.n, seed=a.seed))
         out = {"events": r.events, "digest": f"{r.digest:016x}", "duplicates": r.duplicates,

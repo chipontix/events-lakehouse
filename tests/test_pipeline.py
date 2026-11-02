@@ -101,3 +101,45 @@ def test_replaying_the_topic_adds_nothing(env):
     pg = verify.from_postgres(env["PG_DSN"])
     want = reference.expected(Spec(n=n))
     assert (pg.events, pg.digest) == (want.events, want.digest)
+
+
+def test_quarantine_replay_loads_what_passes_now(env):
+    """A purchase from a producer whose clock ran an hour ahead is quarantined;
+    once that hour has passed, replay loads it as its own batch with a Parquet
+    file and removes it from the quarantine. A record that is still broken
+    stays. A second replay changes nothing."""
+    import datetime as dt
+    from lakehouse import codec, ingest as ing
+
+    now = int(dt.datetime.now(dt.UTC).timestamp() * 1000)
+    ev = {"event_id": str(uuid.uuid4()), "event_type": "purchase", "user_id": 7, "occurred_at": now + 3_600_000,
+          "amount_cents": 1999, "currency": "EUR", "session_id": None}
+    early = codec.encode(ev, codec.LATEST)
+    broken = codec.encode(ev | {"event_id": str(uuid.uuid4()), "currency": "eur"}, codec.LATEST)
+    lake = Path(env["LAKE_DIR"])
+    with psycopg.connect(env["PG_DSN"]) as c:
+        ing.apply_schema(c)
+        for off, raw in enumerate((early, broken)):
+            assert ing.check(raw, now)[0] in ("occurred_at_out_of_range", "bad_currency")
+            c.execute('INSERT INTO events_quarantine (topic, partition, "offset", reason, payload, batch_id)'
+                      " VALUES (%s, 0, %s, %s, %s, 0)", [env["TOPIC"], off, ing.check(raw, now)[0], raw])
+        c.commit()
+
+        assert ing.replay_quarantine(c, lake, now_ms=now)["released"] == 0  # too early: nothing moves
+        later = now + 2 * 3_600_000
+        out = ing.replay_quarantine(c, lake, now_ms=later)
+        assert (out["checked"], out["released"], out["inserted"]) == (2, 1, 1)
+        assert c.execute("SELECT reason FROM events_quarantine").fetchall() == [("bad_currency",)]
+        assert c.execute("SELECT currency, batch_id FROM events WHERE event_id = %s",
+                         [ev["event_id"]]).fetchone() == ("EUR", out["batch_id"])
+        rel = c.execute("SELECT parquet_file FROM ingest_batches WHERE batch_id = %s", [out["batch_id"]]).fetchone()[0]
+        assert pq_rows(lake / rel) == 1
+
+        again = ing.replay_quarantine(c, lake, now_ms=later)
+        assert (again["checked"], again["released"]) == (1, 0)
+        assert c.execute("SELECT count(*) FROM events").fetchone()[0] == 1
+
+
+def pq_rows(path: Path) -> int:
+    import pyarrow.parquet as pq
+    return pq.read_metadata(path).num_rows

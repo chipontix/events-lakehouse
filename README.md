@@ -171,6 +171,13 @@ original version is kept in `schema_version`.
   them, with the reason and raw bytes, in `events_quarantine` instead of
   failing the batch (one bad producer does not stop the topic). dbt tests
   check the tables, for whatever reaches the lake another way.
+- **Quarantine replay.** `python -m lakehouse replay [--reason R]` re-checks
+  quarantined records against the current schemas and contract, for example
+  after a new schema id is registered or once a producer's clock skew has
+  passed. Records that pass now are loaded as one new batch (deduped like any
+  other, with its own Parquet file) and leave the quarantine in the same
+  transaction; the rest stay. Consumer offsets are not touched
+  (`test_quarantine_replay_loads_what_passes_now`).
 - **Avro with a file-based registry.** Avro's writer/reader resolution gives
   renames (aliases), type widening and defaults for free; the framing matches
   the Confluent serializers, so a real Schema Registry can replace the
@@ -224,7 +231,8 @@ runs the broker-less ones on the runner and `make test` in Docker.
 - Postgres keeps every event (it is also the dedup index). Retention would
   need a dedup window instead, e.g. partitioned by day and dropped after the
   maximum replay horizon.
-- The quarantine is write-only: there is no replay tool for fixed records.
+- Replay only re-checks records as they are: a record that needs its bytes fixed
+  (a typo in a currency) has to be produced again by its source.
 - The schema registry is a directory baked into the image; adding a version
   means a deploy. Producers are trusted to use a registered id.
 - `fct_events`' batch anti-join scans the distinct batch ids of the table

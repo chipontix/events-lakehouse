@@ -104,6 +104,83 @@ def recover_parquet(conn: psycopg.Connection, lake: Path) -> int:
     return len(todo)
 
 
+def check(raw: bytes, now_ms: int) -> tuple[str | None, int, dict | None]:
+    """(quarantine reason or None, writer schema id, record in the latest shape)."""
+    try:
+        version, e = codec.decode(raw)
+    except codec.DecodeError as err:
+        return err.reason, 0, None
+    return contract.violation(e, now_ms), version, e
+
+
+def _row(e: dict, version: int) -> tuple:
+    return (e["event_id"], e["event_type"], e["user_id"], e["occurred_at"],
+            e["amount_cents"], e["currency"], e["session_id"], version)
+
+
+def _insert_events(cur, batch_id: int, ingested_at: dt.datetime, rows: dict[str, tuple]) -> set[str]:
+    """Loads ``rows`` through the stage table; returns the event ids that were new."""
+    if not rows:
+        return set()
+    cur.execute(STAGE)
+    cur.execute("TRUNCATE stage")
+    with cur.copy("COPY stage FROM STDIN (FORMAT BINARY)") as copy:
+        copy.set_types(STAGE_TYPES)
+        for r in rows.values():
+            copy.write_row(r)
+    cur.execute(INSERT_EVENTS, [batch_id, ingested_at])
+    return {r[0] for r in cur.fetchall()}
+
+
+def replay_quarantine(conn: psycopg.Connection, lake: Path, reason: str | None = None,
+                      now_ms: int | None = None) -> dict:
+    """Re-checks quarantined records against the current schemas and contract
+    (after a schema is registered, or a producer's clock skew has passed).
+    Records that pass now are loaded as one new batch, deduped like any other,
+    and leave the quarantine in the same transaction; the rest stay, with
+    their current reason. Offsets are not touched."""
+    ingested_at = dt.datetime.now(dt.UTC)
+    now_ms = now_ms if now_ms is not None else int(ingested_at.timestamp() * 1000)
+    rows: dict[str, tuple] = {}
+    released, still = [], []
+    with conn.transaction():
+        cur = conn.cursor()
+        todo = cur.execute(
+            'SELECT topic, partition, "offset", reason, payload FROM events_quarantine'
+            " WHERE %(r)s::text IS NULL OR reason = %(r)s ORDER BY 1, 2, 3 FOR UPDATE", {"r": reason},
+        ).fetchall()
+        for topic, part, off, old, raw in todo:
+            why, version, e = check(bytes(raw), now_ms)
+            if why:
+                if why != old:
+                    still.append((why, topic, part, off))
+            else:
+                released.append((topic, part, off))
+                rows.setdefault(e["event_id"], _row(e, version))
+        if not released:
+            cur.executemany('UPDATE events_quarantine SET reason = %s WHERE topic = %s AND partition = %s'
+                            ' AND "offset" = %s', still)
+            return {"checked": len(todo), "released": 0, "inserted": 0, "duplicates": 0, "batch_id": None}
+        batch_id = cur.execute(
+            "INSERT INTO ingest_batches (ingested_at, messages, inserted, duplicates, quarantined)"
+            " VALUES (%s, %s, 0, 0, 0) RETURNING batch_id", [ingested_at, len(released)],
+        ).fetchone()[0]
+        inserted = _insert_events(cur, batch_id, ingested_at, rows)
+        dups = len(released) - len(inserted)
+        cur.execute("UPDATE ingest_batches SET inserted = %s, duplicates = %s WHERE batch_id = %s",
+                    [len(inserted), dups, batch_id])
+        cur.executemany('DELETE FROM events_quarantine WHERE topic = %s AND partition = %s AND "offset" = %s',
+                        released)
+        cur.executemany('UPDATE events_quarantine SET reason = %s WHERE topic = %s AND partition = %s'
+                        ' AND "offset" = %s', still)
+    if inserted:  # a crash before this is repaired by recover_parquet, as for any batch
+        rel = write_parquet(lake, batch_id, ingested_at, [r for k, r in rows.items() if k in inserted])
+        conn.execute("UPDATE ingest_batches SET parquet_file = %s WHERE batch_id = %s", [rel, batch_id])
+        conn.commit()
+    return {"checked": len(todo), "released": len(released), "inserted": len(inserted), "duplicates": dups,
+            "batch_id": batch_id}
+
+
 class Ingest:
     def __init__(self, conn: psycopg.Connection, lake: Path, topic: str):
         self.conn, self.lake, self.topic = conn, lake, topic
@@ -119,18 +196,13 @@ class Ingest:
         for m in msgs:
             next_offsets[m.partition()] = m.offset() + 1
             raw = m.value() or b""
-            try:
-                version, e = codec.decode(raw)
-                reason = contract.violation(e, now_ms)
-            except codec.DecodeError as err:
-                reason = err.reason
+            reason, version, e = check(raw, now_ms)
             if reason:
                 quarantine.append((self.topic, m.partition(), m.offset(), reason, raw))
             elif e["event_id"] in rows:
                 dups += 1
             else:
-                rows[e["event_id"]] = (e["event_id"], e["event_type"], e["user_id"], e["occurred_at"],
-                                       e["amount_cents"], e["currency"], e["session_id"], version)
+                rows[e["event_id"]] = _row(e, version)
 
         with self.conn.transaction():
             cur = self.conn.cursor()
@@ -139,16 +211,7 @@ class Ingest:
                 " VALUES (%s, %s, 0, 0, %s) RETURNING batch_id",
                 [ingested_at, len(msgs), len(quarantine)],
             ).fetchone()[0]
-            inserted: set[str] = set()
-            if rows:
-                cur.execute(STAGE)
-                cur.execute("TRUNCATE stage")
-                with cur.copy("COPY stage FROM STDIN (FORMAT BINARY)") as copy:
-                    copy.set_types(STAGE_TYPES)
-                    for r in rows.values():
-                        copy.write_row(r)
-                cur.execute(INSERT_EVENTS, [batch_id, ingested_at])
-                inserted = {r[0] for r in cur.fetchall()}
+            inserted = _insert_events(cur, batch_id, ingested_at, rows)
             dups += len(rows) - len(inserted)
             cur.execute("UPDATE ingest_batches SET inserted = %s, duplicates = %s WHERE batch_id = %s",
                         [len(inserted), dups, batch_id])
