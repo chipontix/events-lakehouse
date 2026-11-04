@@ -11,7 +11,7 @@ duplicates, late events and bad records; the outputs are compared with a
 reference computed independently from the generator's ground truth.
 
 ```bash
-make test     # 38 tests: unit, contract, dbt checks, end to end against Kafka + Postgres (Docker only)
+make test     # 40 tests: unit, contract, dbt checks, end to end against Kafka + Postgres (Docker only)
 make demo     # 100k messages through the pipeline, then verify against the reference
 make bench    # 1M messages, 1 and 3 ingest workers, 3 runs each -> results/bench.jsonl
 make test-1m  # the two-phase end-to-end comparison at 1M messages
@@ -201,7 +201,7 @@ original version is kept in `schema_version`.
 | `test_dbt_checks.py` | dbt | rogue rows fail exactly their dbt tests; freshness |
 | `test_pipeline.py` | Kafka, Postgres | two phases vs reference; crash repair; replay |
 
-`make test` runs all 38 in the app container; [CI](.github/workflows/ci.yml)
+`make test` runs all 40 in the app container ([log of the CI run](results/raw/make-test-ci-41647821923.log)); [CI](.github/workflows/ci.yml)
 runs the broker-less ones on the runner and `make test` in Docker.
 
 ## Running on macOS with colima

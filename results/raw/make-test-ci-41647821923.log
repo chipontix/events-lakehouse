@@ -1,0 +1,51 @@
+# make test in CI (job end-to-end), run https://github.com/chipontix/events-lakehouse/actions/runs/41647821923, commit 0f43306
+# fetched with: gh run view 41647821923 -R chipontix/events-lakehouse --log | awk -F'	' '$1=="end-to-end"' | cut -f3-
+2026-11-03T13:50:04.6829486Z #13 2.365  + pytest==9.2.0
+2026-11-03T13:50:04.6829611Z #13 2.365  + python-dateutil==2.9.0.post0
+2026-11-03T13:50:04.6829755Z #13 2.365  + python-dotenv==1.2.4
+2026-11-03T13:50:04.6829886Z #13 2.365  + python-slugify==9.1.3
+2026-11-03T13:50:04.6830015Z #13 2.365  + pytimeparse==1.1.10
+2026-11-03T13:50:04.6830140Z #13 2.365  + pytz==2026.6
+2026-11-03T13:50:04.6830262Z #13 2.366  + pyyaml==6.0.3
+2026-11-03T13:50:04.6830384Z #13 2.366  + rapidfuzz==3.14.6
+2026-11-03T13:50:04.6830507Z #13 2.366  + referencing==0.37.0
+2026-11-03T13:50:04.6830630Z #13 2.366  + requests==2.34.2
+2026-11-03T13:50:04.6830752Z #13 2.366  + rpds-py==2026.9.1
+2026-11-03T13:50:04.6830873Z #13 2.366  + six==1.17.0
+2026-11-03T13:50:04.6830994Z #13 2.366  + snowplow-tracker==1.1.0
+2026-11-03T13:50:04.6831124Z #13 2.366  + sqlglot==30.27.0
+2026-11-03T13:50:04.6831248Z #13 2.366  + sqlparse==0.6.0
+2026-11-03T13:50:04.6831365Z #13 2.366  + tabulate==0.10.0
+2026-11-03T13:50:04.6831485Z #13 2.366  + text-unidecode==1.3
+2026-11-03T13:50:04.6831639Z #13 2.366  + typing-extensions==4.16.0
+2026-11-03T13:50:04.6831903Z #13 2.366  + typing-inspection==0.4.4
+2026-11-03T13:50:04.6832035Z #13 2.366  + urllib3==2.8.0
+2026-11-03T13:50:04.6832154Z #13 2.366  + zipp==4.1.2
+2026-11-03T13:50:10.7947137Z #13 DONE 8.6s
+2026-11-03T13:50:10.9565285Z 
+2026-11-03T13:50:10.9565788Z #14 [stage-0 6/7] COPY . .
+2026-11-03T13:50:10.9566097Z #14 DONE 0.0s
+2026-11-03T13:50:10.9566179Z 
+2026-11-03T13:50:10.9566255Z #15 [stage-0 7/7] RUN uv sync --frozen
+2026-11-03T13:50:10.9566432Z #15 0.148    Building lakehouse @ file:///work
+2026-11-03T13:50:11.1259094Z #15 0.150       Built lakehouse @ file:///work
+2026-11-03T13:50:11.1259431Z #15 0.152 Prepared 1 package in 4ms
+2026-11-03T13:50:11.1259658Z #15 0.153 Installed 1 package in 1ms
+2026-11-03T13:50:11.1259900Z #15 0.153  + lakehouse==0.1.0 (from file:///work)
+2026-11-03T13:50:11.1260173Z #15 DONE 0.2s
+2026-11-03T13:50:11.1260278Z 
+2026-11-03T13:50:11.1260358Z #16 exporting to image
+2026-11-03T13:50:11.1260541Z #16 exporting layers
+2026-11-03T13:50:13.5507314Z #16 exporting layers 2.6s done
+2026-11-03T13:50:13.5733664Z #16 writing image sha256:2899f8464d231913ebbeaef41c0af17f11afed24db9e581afe32166fbd4a69dc done
+2026-11-03T13:50:13.5734299Z  app  Built
+2026-11-03T13:50:13.5734501Z #16 naming to docker.io/library/lakehouse-app done
+2026-11-03T13:50:13.5735051Z #16 DONE 2.6s
+2026-11-03T13:50:13.5735182Z 
+2026-11-03T13:50:13.5735249Z #17 resolving provenance for metadata file
+2026-11-03T13:50:13.5735402Z #17 DONE 0.0s
+2026-11-03T13:50:13.5779996Z docker compose run --rm -T app python -m pytest -q
+2026-11-03T13:50:13.6498175Z  Container lakehouse-kafka-1  Running
+2026-11-03T13:50:13.6498499Z  Container lakehouse-postgres-1  Running
+2026-11-03T13:51:04.2984815Z ........................................                                 [100%]
+2026-11-03T13:51:04.2985193Z 40 passed in 49.59s
